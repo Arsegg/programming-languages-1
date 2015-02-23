@@ -1,9 +1,7 @@
 #include <iostream>
-#include <cstring>
 #include <vector>
 #include <sstream>
 #include <stdlib.h>
-#include <conio.h>
 #include <stdexcept>
 
 using namespace std;
@@ -18,7 +16,8 @@ bool isNumber(string &s) {
         if (it == s.end())
             return false;
     }
-    for (; it != s.end() && isdigit(*it); it++);
+    while (it != s.end() && isdigit(*it))
+        it++;
     return it == s.end();
 }
 
@@ -128,8 +127,6 @@ int main() {
     catch (exception &e) {
         cerr << "Error: " << e.what() << "\n";
     }
-    cout << "Press any key...";
-    getch();
 
     return 0;
 }
