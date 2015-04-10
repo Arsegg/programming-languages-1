@@ -1,54 +1,100 @@
 #ifndef _SETTINGSLIB_SETTINGS_H_
 #define _SETTINGSLIB_SETTINGS_H_
 
+#include <fstream>
+#include <map>
 #include <string>
+#include <sstream>
+#include <stdexcept>
+
+#include "util.h"
 
 class settings {
 public:
     class param {
-    private:
-        param(param const &);
+        friend class settings;
 
     public:
-        operator std::string() const;
+        param() {
+        }
 
-        operator int() const;
+        operator std::string() const {
+            return _value;
+        }
 
-        operator bool() const;
+        operator int() const {
+            return stringToInt(_value);
+        }
 
-        operator double() const;
+        operator bool() const {
+            return stringToBool(_value);
+        }
 
-        param &operator=(std::string const &);
+        operator double() const {
+            return stringToDouble(_value);
+        }
 
-        param &operator=(int);
+        template<class T>
+        param &operator=(const T &value) {
+            return *this = param(value);
+        }
 
-        param &operator=(bool);
+        template<class T>
+        param &operator+=(const T &value) {
+            return *this = T(*this) + value;
+        }
 
-        param &operator=(double);
+        template<class T>
+        param &operator-=(const T &value) {
+            return *this = T(*this) - value;
+        }
 
-        param &operator+=(std::string const &);
+        template<class T>
+        param &operator*=(const T &value) {
+            return *this = T(*this) * value;
+        }
 
-        param &operator+=(int);
+        template<class T>
+        param &operator/=(const T &value) {
+            return *this = T(*this) / value;
+        }
 
-        param &operator+=(double);
+        template<class T>
+        param &operator|=(const T &value) {
+            return *this = T(*this) | value;
+        }
 
-        param &operator-=(int);
+        template<class T>
+        param &operator&=(const T &value) {
+            return *this = T(*this) & value;
+        }
 
-        param &operator-=(double);
+        bool is_empty() const {
+            return _value.empty();
+        }
 
-        param &operator*=(int);
+    private:
+        std::string _value;
 
-        param &operator*=(double);
+        param(const param &parameter) {
+            _value = parameter._value;
+        }
 
-        param &operator/=(int);
+        param(const std::string &value) {
+            _value = value;
+        }
 
-        param &operator/=(double);
+        param(const int &value) {
+            _value = intToString(value);
+        }
 
-        param &operator|=(bool);
+        param(const bool &value) {
+            _value = boolToString(value);
+        }
 
-        param &operator&=(bool);
-
-        bool is_empty() const;
+        param(const double &value) {
+            _value = doubleToString(value);
+        }
     };
 
     // Main functions
@@ -58,34 +104,53 @@ public:
      * and load data from file (if exists)
      * \param filename Path to file with settings
      */
-    settings(std::string const &filename);
+    settings(const std::string &fileName) {
+        _fileName = fileName;
+        read();
+    }
 
-    /**
+    virtual ~settings() {
+        write();
+    }
+
+/**
      * Get setting value
      * \param name Setting unique identifier
      * \param def Default setting value
      * \return Stored value for given name or default value
      */
-    std::string const &get(std::string const &name,
-            std::string const &def = "") const;
+    const std::string &get(const std::string &name,
+            const std::string &def = "") const {
+        if (_table.find(name) != _table.end()) {
+            return _table.at(name)._value;
+        }
+        return def;
+    }
 
     /**
      * Set or replace setting value and save changes to file
      * \param name Setting unique identifier
      * \param value New setting value
      */
-    void set(std::string const &name,
-            std::string const &value);
+    void set(const std::string &name, const std::string &value) {
+        _table[name] = value;
+        write();
+    }
 
     /**
      * Reset all settings
      */
-    void reset();
+    void reset() {
+        _table.clear();
+        write();
+    }
 
     /**
      * Reload all settings from file
      */
-    void reload();
+    void reload() {
+        read();
+    }
 
     // Advanced funñtions
 
@@ -93,16 +158,49 @@ public:
       * Get constant setting wrapper
       * \param name Setting unique identifier
       */
-    const param operator[](std::string const &name) const;
+    const param operator[](const std::string &name) const {
+        return _table.at(name);
+    }
 
     /**
       * Get constant setting wrapper
       * \param name Setting unique identifier
       */
-    param operator[](std::string const &name);
+    param operator[](const std::string &name) {
+        return _table.at(name);
+    }
 
 private:
+    std::string _fileName;
+    std::map<std::string, param> _table;
 
+    void read() {
+        std::ifstream stream(_fileName);
+        if (!stream) {
+            std::cout << "Settings file created.\n";
+            return;
+        }
+        while (1) {
+            std::string name;
+            std::string value;
+            stream >> name >> value;
+            if (name == "") {
+                break;
+            }
+            _table[name] = value;
+        }
+    }
+
+    void write() {
+        std::ofstream stream(_fileName);
+        if (!stream) {
+            std::cerr << "Can't safe settings to file.";
+            return;
+        }
+        for (std::map<std::string, param>::const_iterator it = _table.begin(); it != _table.end(); it++) {
+            stream << it->first << " " << std::string(it->second) << "\n";
+        }
+    }
 };
 
 

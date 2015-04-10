@@ -4,5 +4,5 @@ project(SettingsLib)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES main.cpp)
-add_executable(SettingsLib ${SOURCE_FILES} settings.cpp settings.h)
+add_executable(SettingsLib ${SOURCE_FILES} main.cpp settings.h)
 add_library(settings SHARED ${SOURCES})
