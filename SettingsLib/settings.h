@@ -121,8 +121,9 @@ public:
      */
     const std::string &get(const std::string &name,
             const std::string &def = "") const {
-        if (_table.find(name) != _table.end()) {
-            return _table.at(name)._value;
+        try {
+            return _table.at(name);
+        } catch (const exception &e) {
         }
         return def;
     }
@@ -172,12 +173,13 @@ public:
 
 private:
     std::string _fileName;
-    std::map<std::string, param> _table;
+    std::map<std::string, std::string> _table;
 
     void read() {
-        std::ifstream stream(_fileName);
+        _table.clear();
+        std::ifstream stream(_fileName.c_str());
         if (!stream) {
-            std::cout << "Settings file created.\n";
+            std::cout << "Settings file doesn't exist.";
             return;
         }
         while (1) {
@@ -192,13 +194,13 @@ private:
     }
 
     void write() {
-        std::ofstream stream(_fileName);
+        std::ofstream stream(_fileName.c_str());
         if (!stream) {
             std::cerr << "Can't safe settings to file.";
             return;
         }
-        for (std::map<std::string, param>::const_iterator it = _table.begin(); it != _table.end(); it++) {
-            stream << it->first << " " << std::string(it->second) << "\n";
+        for (std::map<std::string, std::string>::const_iterator it = _table.begin(); it != _table.end(); it++) {
+            stream << it->first << " " << it->second << "\n";
         }
     }
 };
